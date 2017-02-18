@@ -25,9 +25,9 @@ defmodule NewRelixir.Transaction do
 
   This method should be called just before processing a web transaction.
   """
-  @spec start(String.t) :: t
-  def start(name) when is_binary(name) do
-    %__MODULE__{name: name, start_time: :os.timestamp}
+  @spec start() :: t
+  def start() do
+    %__MODULE__{name: "new_relic_transaction", start_time: :os.timestamp}
   end
 
   @doc """
@@ -36,12 +36,16 @@ defmodule NewRelixir.Transaction do
   This method should be called just after processing a web transaction. It will record the elapsed
   time of the transaction.
   """
-  @spec finish(t) :: :ok
-  def finish(%__MODULE__{start_time: start_time} = transaction) do
+  @spec finish(t, String.t) :: :ok
+  def finish(%__MODULE__{start_time: start_time} = transaction, name) do
     end_time = :os.timestamp
     elapsed = :timer.now_diff(end_time, start_time)
 
-    record_value!(transaction, :total, elapsed)
+    name = unless String.starts_with?(name, "/") do
+      "/" <> name
+    end
+
+    record_value!(%{transaction | name: name}, :total, elapsed)
   end
 
   @doc """
